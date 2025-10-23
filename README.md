@@ -15,7 +15,7 @@ Este projeto é um mini-aplicativo de linha de comando (CLI) construído em Pyth
     cd teste-segmentacao_ybysys
     ```
 
-2.  Crie e ative um ambiente virtual:
+2.  Crie e ative um ambiente virtual (recomendado):
     ```bash
     python -m venv venv
     .\venv\Scripts\activate   # No Windows
@@ -104,3 +104,4 @@ Ambos os métodos possuem limitações, especialmente em cenários complexos do 
 * **Sombras:**  Um objeto, por exemplo uma folha verde em uma sombra forte terá um valor 'V' muito baixo. Isso torna difícil distinguir de outros objetos escuros como terra preta, que também têm baixo 'V'.
 * **Saturação Baixa:**  Objetos de cor "lavada" podem ser difíceis de segmentar. Um verde muito pálido, um azul muito pálido e um cinza-claro são quase idênticos no espaço HSV.
 * **Sensibilidade do K-Means:** O método K-Means é muito sensível ao valor de 'K'. Se você escolher 'K=2' para uma imagem que tem 3 cores dominantes (ex: planta, céu, solo), o algoritmo irá forçar a agrupar duas dessas cores em um único cluster, levando a um resultado ruim.
+
