@@ -46,16 +46,77 @@ def segmentar_hsv(img, args):
 
     return mask
 
-
+###################################################################################################################################
 
 def segmentar_kmeans(img,args):
+    print(f"LOG: iniciando segmentação K-means com k={args.k} e alvo '{args.target}'")
 
-    print("LOG: Chamando segmentar_por_hsv (ainda não implementado)")
-    altura, largura = img.shape[:2]
-    mask = np.zeros((altura, largura), dtype=np.uint8)
+    altura = img.shape[0]
+    largura = img.shape[1]
+
+    #achatando pq o kmeans do opencv aceita só 2D
+    #uma lista de pontos (pixels) com cada ponto tendo suas caractwristicas (cores rgb)
+    pixels_img = img.reshape((-1,3))
+    #converter pra float32 pq o opencv exige
+    pixels_img = np.float32(pixels_img)
+
+    k = args.k
+
+    #criterio de parada (tipo, max_interações,precisão)
+    criterio = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+
+    #rodar o alg 10 vezes com centros iniciais aleatorios para escolher o melhor
+    tentativas = 10
+    flag = cv2.KMEANS_RANDOM_CENTERS
+
+    #execurar o k-means
+    soma_distancias, grupo_q_pertence, cor_media_clausters = cv2.kmeans(
+        data=pixels_img,
+        K=k,
+        bestLabels= None,
+        criteria=criterio,
+        attempts= tentativas,
+        flags=flag
+    )
+
+    print(f"LOG: K-Means concluído. Centróides encontrados:")
+    # Converte centróides para inteiros para impressão
+    print(cor_media_clausters.astype(int))
+
+    if args.target == 'green':
+        target_cor = np.array([0,255,0],dtype=np.float32)
+    elif args.target == 'blue':
+        target_cor = np.array([255,0,0], dtype=np.float32)
+
+    dist_min = float('inf')
+    id_clauster_maisproxAlvo = -1
+
+    #olhar cada centroide para ver qual ta mais proximo da cor desejada
+    for i in range(k):
+        cor_centroid = cor_media_clausters[i]
+
+        distancia = np.linalg.norm(cor_centroid - target_cor)
+
+        if distancia < dist_min:
+            dist_min = distancia
+            id_clauster_maisproxAlvo = i
+
     
+    print(f"LOG: Cluster alvo selecionado: {id_clauster_maisproxAlvo} (Cor: {cor_media_clausters[id_clauster_maisproxAlvo].astype(int)})")
+
+    #criar mascara
+    mask_plana = (grupo_q_pertence.flatten() == id_clauster_maisproxAlvo)
+    #converter True pra 255 e false pra 0 e para o tipo imagem uint8
+    mask_uint8 = np.uint8(mask_plana * 255)
+
+    #desatachar a imgem
+    mask = mask_uint8.reshape((altura,largura))
+
+
     return mask
 
+
+##########################################################################################################################################
 
 def main():
 
@@ -92,7 +153,7 @@ def main():
     parser.add_argument(
         '--k',
         type=int,
-        default=3, # Valor padrão razoável
+        default=2, # valor padrão razoável
         help="Número de clusters (K) para o método K-Means" 
     )
 
@@ -149,7 +210,7 @@ def main():
 
 
 ### caminho para a saida
-    nome_arq_input = Path(args.input).stem
+    nome_arq_input = Path(args.input).stem #pega só o nome do arq
 
     mask_caminho = f"{pastaSaida}/{nome_arq_input}_mask.png"
     overlay_caminho = f"{pastaSaida}/{nome_arq_input}_overlay.png"
